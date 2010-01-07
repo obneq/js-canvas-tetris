@@ -1,0 +1,31 @@
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <title>tetris</title>
+    <script type="text/javascript" src="shapes.js"></script>
+    <script type="text/javascript" src="tetris.js"></script>
+    <style type="text/css" media="screen">
+      body {
+      color: gray;
+      background-color:black;
+      }
+    </style>
+  </head>
+  <body onload="new_game()">
+    <div id="canvasholder">
+      <style type="text/css" media="screen">
+        #canvasholder {
+        width: 400px;
+        margin-left: auto;
+        margin-right: auto;
+        }
+        #canvas {
+        float: left;
+        background-color:gray;
+        }
+      </style>
+      <canvas id="canvas" width="200" height="400"></canvas>
+      reload to start a new game. use a/f keys to rotate and h/l to go
+      left or right, space to drop.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,7 @@
+js-canvas-tetris
+
+really simple tetris in javascript using canvas element.
+
+a/f 	rotate 
+h/l 	move
+space 	drop
