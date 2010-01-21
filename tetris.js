@@ -9,6 +9,9 @@ var colors = ["rgb(13, 13, 13)",   "rgb(200, 13, 13)",
               "rgb(200, 200, 13)", "rgb(200, 13, 200)",
               "rgb(13, 200, 200)", "rgb(200, 200, 200)"];
 
+var levels  = [888, 666, 555, 444, 404, 333, 303, 222, 202, 111, 101];
+var run;
+
 function board(x, y){
   //constructs a new empty board
   this.x=x;
@@ -51,6 +54,8 @@ function board(x, y){
       if(!this.val[i][l])
         return false;
     this.max_pos++;
+    status.lines++;
+    status.check_level();
     return true;
   }
   
@@ -73,7 +78,7 @@ function shape (){
     var d=this.Shape.data[this.Rotation];
     var newX = this.Xpos + x;
     var newY = this.Ypos + y;
-    //check for board bounds
+    //enforce board bounds
     newX=Math.max(0, Math.min(newX, board.x - d.x));
     newY=Math.max(0, Math.min(newY, board.y - d.y));
     //check for obstacles on board
@@ -91,9 +96,8 @@ function shape (){
     if (newrot<0)
       newrot=this.Shape.rotations+newrot;
     //check for obstacles on board
-    if (!this.check_rotation(newrot))
-      return;
-    this.Rotation = newrot;
+    if (this.check_rotation(newrot))
+      this.Rotation = newrot;
     view.update();
   }
   
@@ -102,14 +106,10 @@ function shape (){
       this.Ypos+=1;
     view.update();
   }
-
-  this.check_move = check_move;
-  this.check_rotation = check_rotation;
-  this.stuck = check_stuck;
 }
 
 //dont mind the weird indexes, see above...
-function check_move(newX, newY){
+shape.prototype.check_move=function(newX, newY){
   var d = this.Shape.data[this.Rotation];
   for(var i=0; i<d.x; i++)
     for(var j=0; j<d.y; j++)
@@ -118,7 +118,7 @@ function check_move(newX, newY){
   return true;
 }
 
-function check_rotation(r){
+shape.prototype.check_rotation=function (r){
   var d = this.Shape.data[r];
   if(this.Ypos+d.y > board.y || this.Xpos+d.x > board.x)
     return false;
@@ -129,7 +129,7 @@ function check_rotation(r){
   return true;
 }
 
-function check_stuck(){
+shape.prototype.stuck=function (){
   var d = this.Shape.data[this.Rotation];
   if(this.Ypos + d.y==board.y)
     return true;
@@ -178,6 +178,42 @@ function view(size){
   }
 }
 
+function preview(size){
+  //constructs the preview
+  this.canvas = document.getElementById("preview");
+  this.ctx = this.canvas.getContext("2d");
+  this.ctx.strokeStyle = colors[0];
+
+  this.update=function(){
+    this.ctx.clearRect(0, 0, 4*size, 4*size);
+    var d=next.Shape.data[next.Rotation];
+    for (var i=0; i<d.y; i++)
+      for (var j=0; j<d.x; j++)
+        if(d.val[i][j]) {
+          this.ctx.fillStyle = colors[next.Shape.color];
+          this.ctx.fillRect(j*size, i*size, size, size);
+          this.ctx.strokeRect(j*size, i*size, size, size);
+        }
+  }
+}
+
+function status(){
+  this.lines=0;
+  this.level=0;
+  var s=document.getElementById("status");
+  this.check_level=function(){
+    if(this.lines%10==0){
+      clearInterval(run);
+      this.level++;
+      run=setInterval(step, levels[this.level]);
+      this.update();
+    }
+  }
+  this.update=function(){
+    s.innerHTML="lines: "+this.lines+" level: "+this.level;
+  }
+}
+
 function key(e){
   //stolen from the internet...
   var evt=(e)?e:(window.event)?window.event:null;
@@ -205,24 +241,36 @@ function key(e){
 function step(){
   //the main loop
   if(current.stuck()){
-    //FIXME: end game when max_pos==board.y
+    //the board starts at top left... more braindamage
     board.max_pos=Math.min(current.Ypos, board.max_pos);
     board.add(current);
-    //FIXME: count lines and decrement interval every ten
-    //or so, also give points...
+    if(board.max_pos<=0)
+      clearInterval(run);
+    //FIXME: add scoring
     board.check_lines();
-    current = new shape();
+    current = next;
+    next = new shape();
+    preview.update();
+    status.update();
   } else
     current.Ypos += 1;
   view.update();
 }
 
 function new_game(){
-  board = new board(10,20);
-  view = new view(20);
+  //board size
+  board   = new board(10,20);
+  //size of one unit in pixel
+  next    = new shape();
   current = new shape();
+  view    = new view(20);
+  preview = new preview(20);
+  status  = new status();
+
+  status.update();
+  preview.update();
   view.update();
   //go!
-  setInterval(step, 666);
+  run=setInterval(step, 666);
 }
 
